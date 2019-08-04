@@ -54,31 +54,57 @@ def read_dat(fn_pref):
 
     return dat,marker_idx
 
-def get_idx(dat_time,mk_times,pos=False):
+def get_idx(dat_time,mk_times,pos=False,oldvsn=True):
     """
     from a data file with times and marker times in the same format, return indices for all the markers
     """
- 
-    dat_time = list(dat_time)
-
-    tmp = []
-    exist = []
-    for ii in mk_times:
-        try:
-            tmp.append(dat_time.index(ii))  
-            exist.append(True)
-        except:
-            exist.append(False)
-            print('warning: missing index ' + str(ii))
-            pass   # this happens if the data was clipped...
-
-    mk_idx = np.array(tmp)
-
-    if pos:
-       return mk_idx,exist
+    if oldvsn:
+        dat_time = list(dat_time)
+    
+        tmp = []
+        exist = []
+        for ii in mk_times:
+            try:
+                tmp.append(dat_time.index(ii))  
+                exist.append(True)
+            except:
+                exist.append(False)
+                print('warning: missing index ' + str(ii))
+                pass   # this happens if the data was clipped...
+    
+        mk_idx = np.array(tmp)
+    
+        if pos:
+           return mk_idx,exist
+        else:
+           return mk_idx
+     
     else:
-       return mk_idx
-
+        dat_time = list(awd_dat['DateTime'])
+        mk_idx = []
+        exist_list = []
+        for block in mk_times:
+            tmp = ()
+            exist = ()
+            for time in block[0:2]:
+                try:
+                    tmp = tmp+(dat_time.index(time),)
+                    exist=exist+(True,)
+                except:
+                    if time<dat_time[0]:
+                        tmp=tmp+(0,)
+                    elif time>dat_time[-1]:
+                        tmp=tmp+(len(dat_time)-1,)
+                    exist=exist+(False,)
+        tmp = tmp+(block[2],)
+        exist_list.append(exist)
+        mk_idx.append(tmp)
+        
+        if pos:
+            return mk_idx,exist
+        else:
+            return mk_idx
+        
 def read_marker(fn,awd_dat):
     '''This shouldn't be needed anymore... 
     '''
@@ -195,11 +221,17 @@ def read_log(fn,awd_dat={}):
         else:
             comments = []
     else:
-        mk_time = [ val for pair in zip(st_time, en_time) for val in pair]
-        mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
-        log_dat['idx'] =  mk_idx
+        mk_list = list(zip(st_time,en_time,log_dat['Comment']))
+        #mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
+        mk_idx,pos=get_idx(awd_dat['DateTime'],mk_list,pos=True,oldvsn=False)
+        print(mk_idx)
+        #adjust for comment blocks that are totally out of range of AWD
+        for idx in range(0,len(mk_idx)):
+            if pos[idx]==(False,False):
+                mk_idx.pop(idx)
+        log_dat['idx'] =  [y for z in [x[0:2] for x in mk_idx] for y in z]
         log_dat['mks'] = {}
-        comments = [ log_dat['idx'][::2],list(np.array(log_dat['Comment'])[pos[::2]])]
+        comments = ([[x[2] for x in mk_idx],np.array([x[0] for x in mk_idx])])
 
 
     return log_dat,kw_dat,comments
