@@ -190,7 +190,7 @@ def read_log(fn,awd_dat={}):
                 for y in indices:
                     com.append(add_com[y])
                 #com_idx = com_idx + list(mk_idx[cc_log_idx])
-                com_idx.extend(cc_idx)
+                    com_idx.extend(cc_idx)
             comments = [com_idx, com]   # for compatibility but should be changed...    
         else:
             comments = []
@@ -596,6 +596,7 @@ def write_Mtimes_new(awd_dat,mk_idx,fn_pref,mc_dict={},fn_suff=""):
     all_dt_txt = []
 
     for mm in mk_idx.keys():
+        print(mm)
         # convert indices to time
         mm_dt = [ awd_dat['dt_list'][ii] for ii in mk_idx[mm] ]
     
@@ -609,32 +610,34 @@ def write_Mtimes_new(awd_dat,mk_idx,fn_pref,mc_dict={},fn_suff=""):
             tmp = mm_dt_txt[ii].str.split(" ", n = 1, expand = True)
             mm_dt_txt[ ii + 'Date'] = tmp[0]
             mm_dt_txt[ ii + 'Time'] = tmp[1]
-        
+        print(len(mm_dt_txt))
         if mm in mc_dict.keys():
             #account for missing comments
-            for ii,idx in enumerate(mk_idx[mm]):
-                if ii % 2 == 0:
-                    if not idx in mc_dict[mm]['idxs']:
-                        mc_dict[mm]['idxs'].insert(int(ii/2),idx)
-                        mc_dict[mm]['comments'].insert(int(ii/2),"")
+            if len(mk_idx[mm])/2>len(mc_dict[mm]['idxs']):
+                for ii,idx in enumerate(mk_idx[mm]):
+                    if ii % 2 == 0:
+                        if not idx in mc_dict[mm]['idxs']:
+                            mc_dict[mm]['idxs'].insert(int(ii/2),idx)
+                            mc_dict[mm]['comments'].insert(int(ii/2),"")
             comments = mc_dict[mm]['comments']
+            print(len(comments))
         else:
             comments = [""]*len(mm_dt_txt)
         
         mm_dt_txt['Comment']=comments    
         all_dt_txt.append(mm_dt_txt)
 
-        all_dt = pd.concat(all_dt_txt,join='outer',axis=0,sort=False)
-        all_dt['OffTime'] = pd.to_datetime(all_dt.OffTime)
-        all_dt['OffDate_dt'] = pd.to_datetime(all_dt['OffDate'])
-        all_dt.sort_values(by=['OffDate_dt','OffTime','marker'],ascending=True,inplace=True)
-        del all_dt['OffDate_dt']
-        all_dt['OffTime'] = all_dt.OffTime.dt.strftime(dt_fmt[9:])
+    all_dt = pd.concat(all_dt_txt,join='outer',axis=0,sort=False)
+    all_dt['OffTime'] = pd.to_datetime(all_dt.OffTime)
+    all_dt['OffDate_dt'] = pd.to_datetime(all_dt['OffDate'])
+    all_dt.sort_values(by=['OffDate_dt','OffTime','marker'],ascending=True,inplace=True)
+    del all_dt['OffDate_dt']
+    all_dt['OffTime'] = all_dt.OffTime.dt.strftime(dt_fmt[9:])
         
-        all_dt = all_dt[['OffDate','OffTime','OnDate','OnTime','marker','Comment']]
-        all_dt.to_csv(fn_pref + '_Mtimes' + fn_suff + '.csv', sep=',',index=False)
+    all_dt = all_dt[['OffDate','OffTime','OnDate','OnTime','marker','Comment']]
+    all_dt.to_csv(fn_pref + '_Mtimes' + fn_suff + '.csv', sep=',',index=False)
 
-        return all_dt
+    return all_dt
     
 def read_Mtimes(fn,awd_dat):
     Mtimes = pd.read_csv(fn)
