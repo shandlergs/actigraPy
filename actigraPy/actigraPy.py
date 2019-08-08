@@ -115,8 +115,6 @@ def read_log(fn,awd_dat={}):
     elif fn_ext == '.xls':
         log_dat = pd.read_excel(fn)
 
-    print(log_dat)
-
     # check for comment column and extract the rows that have the keywords
     # this will fail miserably if there is no Comment column...
     keywords = {'watch_on':['Start','start'],'watch_off':['End','end']}
@@ -159,7 +157,6 @@ def read_log(fn,awd_dat={}):
 
     #print(dat[0].values,mk_time)
 
-
     #mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
     if 'marker' in log_dat.keys():
         um = np.unique(log_dat['marker'])
@@ -171,6 +168,7 @@ def read_log(fn,awd_dat={}):
              mm_log_idx = np.where(np.array(log_dat['marker']) == mm)[0]
              mm_time = [ val for pair in zip(st_time[mm_log_idx], en_time[mm_log_idx]) for val in pair]
              mm_idx, pos =  get_idx(awd_dat['DateTime'],mm_time,pos=True)
+             
              mk_dict[mm] = mm_idx
         log_dat['mks'] = mk_dict 
         #log_dat['idx'] =  mk_idx
@@ -196,11 +194,33 @@ def read_log(fn,awd_dat={}):
             comments = []
     else:
         mk_time = [ val for pair in zip(st_time, en_time) for val in pair]
+        
         mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
+        
+        
+        #find the transitions into and out of data
+        transitions = []
+        past = False
+        for idx,item in enumerate(pos):
+            if item != past:
+                transitions.append(idx)
+            past = item
+        print(transitions)
+        if len(transitions) >= 1:
+            if transitions[0] % 2 != 0: #if a pair got cut off
+                mk_idx=np.insert(mk_idx,0,0,axis=0)
+        if len(transitions) == 2:
+            if transitions[1] %2 != 0:
+                mk_idx=np.append(mk_idx,len(awd_dat['DateTime'])-1)
+        #if len(transitions) >= 2:
+            
+        #mk_idx = np.insert(mk_idx,0,0,axis=0)
+        #print(mk_idx)
+        print(mk_idx)
         log_dat['idx'] =  mk_idx
         log_dat['mks'] = {}
         comments = [ log_dat['idx'][::2],list(np.array(log_dat['Comment'])[pos[::2]])]
-
+        
 
     return log_dat,kw_dat,comments
 
@@ -726,7 +746,6 @@ def get_markers(awd_dat,log_fn=[]):
 
    # get markers indices, and number of markers
    M_idx = [ ii for ii,val in enumerate(awd_dat['M']) if val == 'M']
-
    idat = np.array(dat,dtype=int)
    # zero pad to prep for diff
    idat = np.concatenate([np.zeros(1,dtype=int),idat])
