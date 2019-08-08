@@ -205,22 +205,21 @@ def read_log(fn,awd_dat={}):
             if item != past:
                 transitions.append(idx)
             past = item
-        print(transitions)
+
         if len(transitions) >= 1:
             if transitions[0] % 2 != 0: #if a pair got cut off
                 mk_idx=np.insert(mk_idx,0,0,axis=0)
+                pos[transitions[0]-1]=True
         if len(transitions) == 2:
             if transitions[1] %2 != 0:
                 mk_idx=np.append(mk_idx,len(awd_dat['DateTime'])-1)
         #if len(transitions) >= 2:
-            
+        
         #mk_idx = np.insert(mk_idx,0,0,axis=0)
         #print(mk_idx)
-        print(mk_idx)
         log_dat['idx'] =  mk_idx
         log_dat['mks'] = {}
         comments = [ log_dat['idx'][::2],list(np.array(log_dat['Comment'])[pos[::2]])]
-        
 
     return log_dat,kw_dat,comments
 
@@ -458,7 +457,7 @@ def plot_awd(awd_dat,mk_idx,plot_type='single',comments=[],show=True,fn_pref='',
          p_idx = np.array(mk_idx[mm])
          n_p = len(p_idx)
          p_idx = p_idx * ( round(n_p/2)*[-1,1] )
-         m_idx = np.logical_and(np.abs(p_idx)<=max_idx,np.abs(p_idx)>=min_idx)
+         m_idx = np.logical_and(np.abs(p_idx)<=max_idx,np.abs(p_idx)>=min_idx-1)
          tmp =  list(p_idx[m_idx])
          if debug:
             print('input',cc,tmp)
