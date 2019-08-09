@@ -675,7 +675,7 @@ def read_Mtimes(fn,awd_dat):
         tmp = Mtimes['Off_dt'][Mtimes['marker']==mm].tolist()
         tmp.extend(Mtimes['On_dt'][Mtimes['marker']==mm].tolist())
         tmp.sort()
-        mk_idx[mm] = [np.where(np.asarray(awd_dat['dt_list'])==x)[0][0] for x in tmp]
+        mk_idx[mm] = np.asarray([np.where(np.asarray(awd_dat['dt_list'])==x)[0][0] for x in tmp])
     
     
         if len((Mtimes['Comment'][Mtimes['marker']==mm]).dropna()) > 0:
