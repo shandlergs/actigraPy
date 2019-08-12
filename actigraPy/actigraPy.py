@@ -80,7 +80,7 @@ def get_idx(dat_time,mk_times,pos=False,oldvsn=True):
            return mk_idx
      
     else:
-        dat_time = list(awd_dat['DateTime'])
+        dat_time = list(dat_time)
         mk_idx = []
         exist_list = []
         for block in mk_times:
@@ -96,12 +96,12 @@ def get_idx(dat_time,mk_times,pos=False,oldvsn=True):
                     elif time>dat_time[-1]:
                         tmp=tmp+(len(dat_time)-1,)
                     exist=exist+(False,)
-        tmp = tmp+(block[2],)
-        exist_list.append(exist)
-        mk_idx.append(tmp)
+            tmp = tmp+(block[2],)
+            exist_list.append(exist)
+            mk_idx.append(tmp)
         
         if pos:
-            return mk_idx,exist
+            return mk_idx,exist_list
         else:
             return mk_idx
         
@@ -224,14 +224,13 @@ def read_log(fn,awd_dat={}):
         mk_list = list(zip(st_time,en_time,log_dat['Comment']))
         #mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
         mk_idx,pos=get_idx(awd_dat['DateTime'],mk_list,pos=True,oldvsn=False)
-        print(mk_idx)
         #adjust for comment blocks that are totally out of range of AWD
         for idx in range(0,len(mk_idx)):
             if pos[idx]==(False,False):
                 mk_idx.pop(idx)
         log_dat['idx'] =  [y for z in [x[0:2] for x in mk_idx] for y in z]
         log_dat['mks'] = {}
-        comments = ([[x[2] for x in mk_idx],np.array([x[0] for x in mk_idx])])
+        comments = ([np.array([x[0] for x in mk_idx]),[x[2] for x in mk_idx]])
 
 
     return log_dat,kw_dat,comments
