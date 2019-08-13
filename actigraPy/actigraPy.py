@@ -231,19 +231,10 @@ def write_dat(awd_dat,mk_idx,fn_pref,fn_suff=''):
 
    # make marker dicts into full length series
    for mm in mk_idx.keys():
-      #print(mm)
-      tmp = mk_idx[mm]
-      #print(tmp)
-      tmp_tup = [ ii for ii in zip(tmp[::2],tmp[1::2]) ]
-      tmp_tup.sort(key=lambda tup: tup[0])
-      tmp = [ jj for ii in tmp_tup for jj in ii]
-      #print(tmp)
-      #tmp = np.sort(mk_idx[mm])
       mm_marks = [0] * len(dat)
-      #for ii in mk_idx[mm]: mm_marks[ii]=mm
-      for ii,idx2 in enumerate(tmp[1::2]):
-         idx1 = mk_idx[mm][2*ii]
-         #print(idx1,idx2)
+      for block in mk_idx[mm]:
+         idx1 = block[0]
+         idx2= block[1]
          mm_marks[idx1:idx2]= [1]*(idx2-idx1)
       
       #print(mm_marks)
