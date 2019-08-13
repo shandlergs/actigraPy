@@ -569,58 +569,33 @@ def read_AWD(fn):
    return awd_dat
 
 
-def write_Mtimes(awd_dat,mk_idx,fn_pref,comments=[]):
+def write_Mtimes(awd_dat,mk_idx,fn_pref):
    dt_fmt = "%d-%b-%y %I:%M %p"
+   mk_list = []
 
-   # need to build a list of marker idxs and types, then go through the checks below.
-   # but markers may be off by a minute.. (fixed - I think)
-   all_dt_txt = []
-   #clumsy fix -- find a better way?
-   if 'M' in mk_idx.keys():    
-       if len(mk_idx['M']) == 0:
-           del mk_idx['M']
-           del mk_idx['m']
    for mm in mk_idx.keys():
-      print(mm)
-      # convert indices to time
-      mm_dt = [ awd_dat['dt_list'][ii] for ii in mk_idx[mm] ]
+       if mm != 'M':
+            for tup in mk_idx[mm]:
+                mk_list.append(tup+(mm,))
+   mk_list.sort()
+   dat = pd.DataFrame()
 
-      # convert the times to string
-      mm_dt_tmp = [ ii.strftime(dt_fmt) for ii in mm_dt ]
+   dat['On'] = [awd_dat['dt_list'][x[0]].strftime(dt_fmt) for x in mk_list]
+   dat['Off'] = [awd_dat['dt_list'][x[1]].strftime(dt_fmt) for x in mk_list]
 
-      n = round(len(mm_dt_tmp)/2)
-      # make 'off' and 'on' columns
-      mm_dt_txt = pd.DataFrame(list(zip(mm_dt_tmp[::2],mm_dt_tmp[1::2],[mm]*n)), columns =['Off', 'On','marker'])
-      
-      for ii in ['On','Off']:
-         tmp = mm_dt_txt[ii].str.split(" ", n = 1, expand = True)
-         mm_dt_txt[ ii + 'Date'] = tmp[0]
-         mm_dt_txt[ ii + 'Time'] = tmp[1]
-      all_dt_txt.append(mm_dt_txt)
 
-   if comments:
+   for ii in ['On','Off']:
+       tmp = dat[ii].str.split(" ", n = 1, expand = True)
+       dat[ii + 'Date'] = tmp[0]
+       dat[ ii + 'Time'] = tmp[1]
+   del dat['On']
+   del dat['Off']
 
-      C_dt_tmp =  [ awd_dat['dt_list'][val].strftime(dt_fmt) for ii,val in enumerate(comments[0])]
-      C_dt_txt = pd.DataFrame(list(zip(C_dt_tmp,['c']*len(comments[1]),comments[1])),columns=['Off','marker','Comment'])
-      #C_dt_txt = pd.DataFrame(list(zip(C_dt_tmp,comments[2],comments[1])),columns=['Off','marker','Comment'])
-      tmp = mm_dt_txt[ii].str.split(" ", n = 1, expand = True)
-      C_dt_txt[ 'OffDate'] = tmp[0]
-      C_dt_txt[ 'OffTime'] = tmp[1]
-      C_dt_txt[ 'OnDate'] = tmp[0]
-      C_dt_txt[ 'OnTime'] = tmp[1]
-      all_dt_txt.append(C_dt_txt)
+   dat['marker'] = [x[3] for x in mk_list]
+   dat['Comment'] = [x[2] for x in mk_list]
+   dat.to_csv(fn_pref + '_Mtimes.csv', sep=',',index=False)
 
-   all_dt = pd.concat(all_dt_txt,join='outer',axis=0,sort=False)
-   all_dt['OffTime'] = pd.to_datetime(all_dt.OffTime)
-   all_dt.sort_values(by=['OffDate','OffTime','marker'],ascending=True,inplace=True)
-   all_dt['OffTime'] = all_dt.OffTime.dt.strftime(dt_fmt[9:])
-
-   all_dt = all_dt[['OffDate','OffTime','OnDate','OnTime','marker','Comment']]
-   
-   all_dt.to_csv(fn_pref + '_Mtimes.csv', sep=',',index=False)
-
-   return all_dt
-
+   return dat
 def get_markers(awd_dat,log_fn=[]):
  
    N = awd_dat['N']
