@@ -345,7 +345,7 @@ def despike(dat,zlev=4,win=2):
  
    return nap
 
-def plot_awd(awd_dat,mk_idx,plot_type='single',comments=[],show=True,fn_pref='',max_act=-1,debug=False):
+def plot_awd(awd_dat,mk_idx,plot_type='single',show=True,fn_pref='',max_act=-1,debug=False):
 #def plot_awd(DateTime,idat,list_idx,plot_type='single',comments=[],show=True,fn_pref='',max_act=-1,debug=False):
    idat = awd_dat['activity']
 
@@ -382,7 +382,11 @@ def plot_awd(awd_dat,mk_idx,plot_type='single',comments=[],show=True,fn_pref='',
       ax = awd_fig.add_subplot(n_days,1,dd+1)
       # get data that matches (you really only have to do this for the first day (and last sort of) because it should be 1440 rows per full day
       dd_idx = [idx for idx,ddd  in enumerate(day_list) if ddd == day]
-      
+      if max_act > 0:
+         ax.set_ylim([0,max_act])
+         comment_height = max_act/2
+      else:
+         comment_height = 250
       min_idx = np.min(dd_idx)
 
       max_idx = np.max(dd_idx)
@@ -392,82 +396,47 @@ def plot_awd(awd_dat,mk_idx,plot_type='single',comments=[],show=True,fn_pref='',
             max_idx = max_idx + 1440
          else:
             max_idx = len(idat)
+      offset =0
+      delt_idx = max_idx-min_idx # this should just be the number of days plotted in a row...
 
-      delt_idx = max_idx-min_idx  # this should just be the number of days plotted in a row...
+      if dd==0:
+          offset = 1439-max_idx
+          delt_idx = 1439
+   
       
       if debug:
         print(min_idx,max_idx)
 
       #tmp = idat[dd_idx]
-      plt.bar(np.arange(delt_idx),idat[min_idx:max_idx],width=1)
-
+      plt.bar(np.arange(offset,delt_idx),idat[min_idx:max_idx],width=1)
+     
       colours = ['blue','red','darkred','pink','lightcyan']
       for cc,mm in enumerate(mk_idx.keys()):
-         p_idx = np.array(mk_idx[mm])
-         n_p = len(p_idx)
-         p_idx = p_idx * ( round(n_p/2)*[-1,1] )
-         m_idx = np.logical_and(np.abs(p_idx)<=max_idx,np.abs(p_idx)>=min_idx)
-         tmp =  list(p_idx[m_idx])
-         if debug:
-            print('input',cc,tmp)
-         if len(tmp) > 0:
-            if np.mod(len(tmp),2) > 0 :  # there's an unpaired marker
-                if tmp[0] > 0:
-                    tmp.insert(0,min_idx*-1)
-                else:
-                    tmp.append(max_idx)
-            elif tmp[0] > 0:
-                tmp.insert(0,min_idx*-1)
-                tmp.append(max_idx)
-            if debug:
-               print('plot this',tmp)
-            #tmp2 = tmp[-1]
-            #if cc>0:
-            #   if tmp2 <= max_idx-1:
-            #      tmp.append(np.sign(tmp2)*-1*(np.abs(tmp2+1)))
-            #      tmp.append(max_idx*np.sign(tmp2))
-            if tmp[0]<=0:
-               tmp_s = tmp[::2]
-               tmp_e = tmp[1::2]
-            else:
-               tmp_s = tmp[1::2]
-               tmp_e = tmp[2::2]
-               
-            tmp = zip(tmp_s,tmp_e)
-            for ii in tmp:
-               ax.axvspan(np.abs(ii[0])-min_idx+offset,np.abs(ii[1])-min_idx +offset, alpha=0.3, color=colours[np.mod(cc,len(colours))])
+          mk_dd_idx= np.where([(x[1]>min_idx)&(x[0]<max_idx) for x in mk_idx[mm]])[0].tolist()
+          mk_dd = []
+          for idx in mk_dd_idx:
+              tup = mk_idx[mm][idx]
+              [st,en]=[tup[0],tup[1]]
+              if tup[0]<min_idx:
+                  st=min_idx
+              if tup[1]>max_idx:
+                  en=max_idx
+              tmp=(st,en,tup[2])
+              mk_dd.append(tmp)
+          for idx,ii in enumerate(mk_dd):
+              x1=np.abs(ii[0])-min_idx+offset
+              x2=np.abs(ii[1])-min_idx +offset
+              print("plotting: %d,%d from %s"%(x1,x2,mm))
+              ax.axvspan(x1,x2, alpha=0.3, color=colours[np.mod(cc,len(colours))])
+              jitter = (cc % 2) * comment_height // 4
+              ax.text(x1,comment_height+jitter,ii[2])
+
             #for mm in M_idx[m_idx]:
             #   ax.text(mm-min_idx,idat[mm],'M')
                #print(mm)
 
-      if max_act > 0:
-         ax.set_ylim([0,max_act])
-         comment_height = max_act/2
-      else:
-         comment_height = 250
-
-      if len(comments)>0:
-         com_idx = np.array(comments[0])
-         com_txt = np.array(comments[1])
-         #com_type = np.array(comments[2])
-         c_idx = np.where(np.logical_and(np.abs(com_idx)<=max_idx,np.abs(com_idx)>=min_idx))
-         if debug:
-            print(c_idx[0])
-         if len(c_idx[0]) >0:
-            for ii,cc in enumerate(c_idx[0]):
-               jitter = (ii % 2) * comment_height // 4
-               ax.text(np.abs(com_idx[cc])-min_idx,comment_height+jitter,com_txt[cc])
-               # if comment types are needed...
-               #jitter = (ii % 2)*50
-               #if com_type[cc] == 'CC':
-               #   ax.text(np.abs(com_idx[cc])-min_idx,350+jitter,com_txt[cc],color='blue')
-               #elif com_type[cc] == 'C':      
-               #   ax.text(np.abs(com_idx[cc])-min_idx,150+jitter,com_txt[cc],color='purple')
-               #else:
-               #   ax.text(np.abs(com_idx[cc])-min_idx,250+jitter,com_txt[cc])
-
       ax.set_ylabel(day)
-      ax.set_xticks(np.arange(0,delt_idx,60))
+      ax.set_xticks(np.arange(0,1439,60))
       if plot_type=='double':
          ax.set_xticklabels(list(np.arange(24))*2)
       else:
