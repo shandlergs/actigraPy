@@ -84,7 +84,7 @@ def get_idx(dat_time,mk_times,pos=False):
     else:
         return mk_idx
     
-def read_log(fn,awd_dat={}):
+def read_log(fn,awd_dat={},oldvsn=True):
 
     dt_fmt = '%d-%b-%y %I:%M %p'
 
@@ -145,6 +145,7 @@ def read_log(fn,awd_dat={}):
         # check for comment markers remove from list
         comments = [np.array([]),[]]
         mk_dict = {}
+        mk_dict_real = {}
         for mm in um:
              mm_log_idx = np.where(np.array(log_dat['marker']) == mm)[0]
              x = st_time[mm_log_idx]
@@ -155,14 +156,19 @@ def read_log(fn,awd_dat={}):
              for idx in range(0,len(mm_idx)):
                  if pos[idx]==(False,False):
                       mm_idx.pop(idx)
+             mk_dict_real[mm]=mm_idx
              mk_dict[mm] = [y for z in [x[0:2] for x in mm_idx] for y in z]
              comments[0] =np.append(comments[0],np.array([x[0] for x in mm_idx]))
              comments[1].extend([x[2] for x in mm_idx])
         log_dat['mks'] = mk_dict 
+        log_dat_real = log_dat
+        log_dat_real['mks'] = mk_dict_real
         #log_dat['idx'] =  mk_idx
         log_dat['idx'] =  []
-       
-        return log_dat,kw_dat,comments
+        if oldvsn:
+            return log_dat,kw_dat,comments
+        else:
+            return log_dat_real,kw_dat
     else:
         mk_list = list(zip(st_time,en_time,np.array(log_dat['Comment'])))
         #mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
@@ -171,6 +177,9 @@ def read_log(fn,awd_dat={}):
         for idx in range(0,len(mk_idx)):
             if pos[idx]==(False,False):
                 mk_idx.pop(idx)
+        if not oldvsn:
+            log_dat['idx']=mk_idx
+            return log_dat,kw_dat
         log_dat['idx'] =  [y for z in [x[0:2] for x in mk_idx] for y in z]
         log_dat['mks'] = {}
         comments = ([np.array([x[0] for x in mk_idx]),[x[2] for x in mk_idx]])
@@ -793,19 +802,18 @@ def get_markers(awd_dat,log_fn=[]):
 
    # keep segs in longs (t) and also non-act (t)
    keep = longs[:len(nact_segs)]*nact_segs
-
    z_segs = [ new_seg_idx[ii] for ii,val in enumerate(keep) if val ]
-   z_idx = [ int(ii)  for jj in z_segs for ii in jj]
+   #z_idx = [ int(ii)  for jj in z_segs for ii in jj]
 
    out_idx = {}
-   out_idx ['M'] = np.array(M_idx)
-   out_idx['z'] = np.array(z_idx)
-   out_idx['m'] = np.array(keep_idx)
-   if log_dat:
-      out_idx['l'] = np.sort(np.array(log_dat['idx']))  # sometimes they're not in order?
+   M_list = list(zip(M_idx[0::2], M_idx[1::2]))
+   out_idx ['M'] = [(x[0],x[1],"") for x in M_list] #talk to Jen about this -- pretty clumsy
+   out_idx['z'] = [(int(x[0]),int(x[1]),"") for x in z_segs]
+   out_idx['m'] = [(int(x[0]),int(x[1]),"") for x in sort_tmp]
+   #if log_dat:
+      #out_idx['l'] = np.sort(np.array(log_dat['idx']))  # sometimes they're not in order?
  
-   return out_idx,comments
-
+   return out_idx
 
 if __name__ == "__main__":
    
