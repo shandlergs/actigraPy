@@ -10,6 +10,7 @@ OffDate,OffTime,OnDate,OnTime,marker,Comment
 08-Feb-16,10:05 PM,08-Feb-16,10:23 PM,z,
 08-Feb-16,10:29 PM,08-Feb-16,10:45 PM,z,
 09-Feb-16,12:42 AM,09-Feb-16,01:20 AM,log,shower
+09-Feb-16,12:42 AM,09-Feb-16,01:20 AM,g,TEST
 09-Feb-16,12:47 AM,09-Feb-16,01:25 AM,z,
 09-Feb-16,01:47 AM,09-Feb-16,08:35 AM,z,
 09-Feb-16,09:13 AM,09-Feb-16,09:27 AM,z,
@@ -17,6 +18,7 @@ OffDate,OffTime,OnDate,OnTime,marker,Comment
 09-Feb-16,11:15 AM,09-Feb-16,11:35 AM,z,
 09-Feb-16,01:38 PM,09-Feb-16,01:46 PM,m,
 09-Feb-16,01:45 PM,09-Feb-16,04:35 PM,log,7T MRI
+09-Feb-16,01:45 PM,09-Feb-16,04:35 PM,g,TEST
 09-Feb-16,01:49 PM,09-Feb-16,04:37 PM,z,
 09-Feb-16,01:51 PM,09-Feb-16,04:39 PM,m,
 09-Feb-16,02:00 PM,09-Feb-16,04:00 PM,cal,7T

@@ -159,7 +159,7 @@ def read_log(fn,awd_dat={}):
     log_dat['Off'] = pd.to_datetime(log_dat['OffDate'].astype(str) + 
                                     ' ' + log_dat['OffTime'].astype(str) )
     #log_dat.drop(['OnDate','OnTime','OffDate','OffTime'],inplace=True)
-
+    log_dat['Comment']=log_dat['Comment'].fillna("")
     log_dat = log_dat.to_dict(orient='list')    
 
 
@@ -190,38 +190,29 @@ def read_log(fn,awd_dat={}):
     if 'marker' in log_dat.keys():
         um = np.unique(log_dat['marker'])
         # check for comment markers remove from list
-        c_mk = [ cc for cc in comment_mk if cc in um ]
-        um_not_c = [ ii for ii in um if ii not in comment_mk ] 
+        comments = [np.array([]),[]]
         mk_dict = {}
-        for mm in um_not_c:
+        for mm in um:
              mm_log_idx = np.where(np.array(log_dat['marker']) == mm)[0]
-             mm_time = [ val for pair in zip(st_time[mm_log_idx], en_time[mm_log_idx]) for val in pair]
-             mm_idx, pos =  get_idx(awd_dat['DateTime'],mm_time,pos=True)
-             mk_dict[mm] = mm_idx
+             x = st_time[mm_log_idx]
+             y = en_time[mm_log_idx]
+             z = np.array(log_dat['Comment'])[mm_log_idx]
+             mm_time = list(zip(x,y,z))
+             mm_idx, pos =  get_idx(awd_dat['DateTime'],mm_time,pos=True,oldvsn=False)
+             for idx in range(0,len(mm_idx)):
+                 if pos[idx]==(False,False):
+                      mm_idx.pop(idx)
+             mk_dict[mm] = [y for z in [x[0:2] for x in mm_idx] for y in z]
+             comments[0] =np.append(comments[0],np.array([x[0] for x in mm_idx]))
+             comments[1].extend([x[2] for x in mm_idx])
+             print(mm_idx)
         log_dat['mks'] = mk_dict 
         #log_dat['idx'] =  mk_idx
         log_dat['idx'] =  []
-
-        # deal with comments b/c there might be blanks
-        # if there are markers can use c index...  make list if more than c comments...
-        com = []
-        com_idx = []
-        if len(c_mk) > 0:
-            for cc in c_mk:
-                cc_log_idx = np.where(np.array(log_dat['marker']) == cc)[0]
-                cc_idx, pos =  get_idx(awd_dat['DateTime'],st_time[cc_log_idx],pos=True)
-                com = com + list(np.array(log_dat['Comment'])[cc_log_idx])
-                indices = [i for i, x in enumerate[pos] if pos ==True]
-                add_com = list(np.array(log_dat['Comment'])[cc_log_idx])
-                for y in indices:
-                    com.append(add_com[y])
-                #com_idx = com_idx + list(mk_idx[cc_log_idx])
-                com_idx.extend(cc_idx)
-            comments = [com_idx, com]   # for compatibility but should be changed...    
-        else:
-            comments = []
+       
+        return log_dat,kw_dat,comments
     else:
-        mk_list = list(zip(st_time,en_time,log_dat['Comment']))
+        mk_list = list(zip(st_time,en_time,np.array(log_dat['Comment'])))
         #mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
         mk_idx,pos=get_idx(awd_dat['DateTime'],mk_list,pos=True,oldvsn=False)
         #adjust for comment blocks that are totally out of range of AWD
@@ -231,7 +222,7 @@ def read_log(fn,awd_dat={}):
         log_dat['idx'] =  [y for z in [x[0:2] for x in mk_idx] for y in z]
         log_dat['mks'] = {}
         comments = ([np.array([x[0] for x in mk_idx]),[x[2] for x in mk_idx]])
-
+        print(mk_idx)
 
     return log_dat,kw_dat,comments
 
