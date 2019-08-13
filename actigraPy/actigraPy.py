@@ -151,7 +151,7 @@ def read_log(fn,awd_dat={},oldvsn=True):
              x = st_time[mm_log_idx]
              y = en_time[mm_log_idx]
              z = np.array(log_dat['Comment'])[mm_log_idx]
-             mm_time = list(zip(x,y,z))
+             mm_time = list(zip(y,x,z))
              mm_idx, pos =  get_idx(awd_dat['DateTime'],mm_time,pos=True)
              for idx in range(0,len(mm_idx)):
                  if pos[idx]==(False,False):
@@ -232,9 +232,9 @@ def write_dat(awd_dat,mk_idx,fn_pref,fn_suff=''):
    # make marker dicts into full length series
    for mm in mk_idx.keys():
       #print(mm)
-      tmp = mk_idx[mm]
+      tmp_tup = mk_idx[mm]
       #print(tmp)
-      tmp_tup = [ ii for ii in zip(tmp[::2],tmp[1::2]) ]
+      #tmp_tup = [ ii for ii in zip(tmp[::2],tmp[1::2]) ]
       tmp_tup.sort(key=lambda tup: tup[0])
       tmp = [ jj for ii in tmp_tup for jj in ii]
       #print(tmp)
@@ -596,6 +596,7 @@ def write_Mtimes(awd_dat,mk_idx,fn_pref):
    dat.to_csv(fn_pref + '_Mtimes.csv', sep=',',index=False)
 
    return dat
+
 def get_markers(awd_dat,log_fn=[]):
  
    N = awd_dat['N']
