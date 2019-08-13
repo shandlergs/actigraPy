@@ -84,7 +84,7 @@ def get_idx(dat_time,mk_times,pos=False):
     else:
         return mk_idx
     
-def read_log(fn,awd_dat={},oldvsn=True):
+def read_log(fn,awd_dat={}):
 
     dt_fmt = '%d-%b-%y %I:%M %p'
 
@@ -143,32 +143,22 @@ def read_log(fn,awd_dat={},oldvsn=True):
     if 'marker' in log_dat.keys():
         um = np.unique(log_dat['marker'])
         # check for comment markers remove from list
-        comments = [np.array([]),[]]
         mk_dict = {}
-        mk_dict_real = {}
         for mm in um:
              mm_log_idx = np.where(np.array(log_dat['marker']) == mm)[0]
              x = st_time[mm_log_idx]
              y = en_time[mm_log_idx]
              z = np.array(log_dat['Comment'])[mm_log_idx]
-             mm_time = list(zip(x,y,z))
+             mm_time = list(zip(y,x,z))
              mm_idx, pos =  get_idx(awd_dat['DateTime'],mm_time,pos=True)
              for idx in range(0,len(mm_idx)):
                  if pos[idx]==(False,False):
                       mm_idx.pop(idx)
-             mk_dict_real[mm]=mm_idx
-             mk_dict[mm] = [y for z in [x[0:2] for x in mm_idx] for y in z]
-             comments[0] =np.append(comments[0],np.array([x[0] for x in mm_idx]))
-             comments[1].extend([x[2] for x in mm_idx])
+             mk_dict[mm]=mm_idx
         log_dat['mks'] = mk_dict 
-        log_dat_real = log_dat
-        log_dat_real['mks'] = mk_dict_real
         #log_dat['idx'] =  mk_idx
         log_dat['idx'] =  []
-        if oldvsn:
-            return log_dat,kw_dat,comments
-        else:
-            return log_dat_real,kw_dat
+        
     else:
         mk_list = list(zip(st_time,en_time,np.array(log_dat['Comment'])))
         #mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
@@ -177,15 +167,10 @@ def read_log(fn,awd_dat={},oldvsn=True):
         for idx in range(0,len(mk_idx)):
             if pos[idx]==(False,False):
                 mk_idx.pop(idx)
-        if not oldvsn:
-            log_dat['idx']=mk_idx
-            return log_dat,kw_dat
-        log_dat['idx'] =  [y for z in [x[0:2] for x in mk_idx] for y in z]
-        log_dat['mks'] = {}
-        comments = ([np.array([x[0] for x in mk_idx]),[x[2] for x in mk_idx]])
-        print(mk_idx)
 
-    return log_dat,kw_dat,comments
+        log_dat['idx']=mk_idx
+
+    return log_dat,kw_dat
 
 def write_edited(fn_pref,dat=[],hdr=[],mk_idx=[]):
 
@@ -637,14 +622,14 @@ def get_markers(awd_dat,log_fn=[]):
    # if there is a log file put in the markers and assume they are correct...
    wM_idx = deepcopy(M_idx)
    keep_idx = []
-   log_com = []
    if os.path.isfile(log_fn):
-      log_dat,kw_dat,comments = read_log(log_fn,awd_dat)
+      log_dat,kw_dat = read_log(log_fn,awd_dat)
+      mk_idx=[y for z in [x[0:2] for x in log_dat['idx']] for y in z]
       # all the log markers are 'right', if there's an M marker nearby, then use it for accuracy,and remove from the working list
       # if not, use the log
       if len(wM_idx)>0:
           th = 10  # use a more generous window?
-          for ii,ll in enumerate(log_dat['idx']):
+          for ii,ll in enumerate(mk_idx):
              ll = np.abs(ll)
              match_idx_M,loc_idx = find_nearest(wM_idx,ll)
              #print(match_idx_M,ll)
@@ -656,9 +641,6 @@ def get_markers(awd_dat,log_fn=[]):
                 keep_idx.append(ll)
    else:
        log_dat = {}
-       comments = []
-
-   len_Msegs = np.diff(keep_idx)
    # modify the mask to inlcude the marked segments
    #xM = [ [1]*len_Msegs[ii] if val else [0]*len_Msegs[ii] for ii,val in enumerate(keep_idx) ]
    #maskM = [ jj for ii in xM for jj in ii]
