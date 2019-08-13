@@ -54,86 +54,39 @@ def read_dat(fn_pref):
 
     return dat,marker_idx
 
-def get_idx(dat_time,mk_times,pos=False,oldvsn=True):
+def get_idx(dat_time,mk_times,pos=False):
     """
     from a data file with times and marker times in the same format, return indices for all the markers
     """
-    if oldvsn:
-        dat_time = list(dat_time)
     
-        tmp = []
-        exist = []
-        for ii in mk_times:
+    dat_time = list(dat_time)
+    mk_idx = []
+    exist_list = []
+    for block in mk_times:
+        tmp = ()
+        exist = ()
+        for time in block[0:2]:
             try:
-                tmp.append(dat_time.index(ii))  
-                exist.append(True)
+                tmp = tmp+(dat_time.index(time),)
+                exist=exist+(True,)
             except:
-                exist.append(False)
-                print('warning: missing index ' + str(ii))
-                pass   # this happens if the data was clipped...
+                if time<dat_time[0]:
+                    tmp=tmp+(0,)
+                elif time>dat_time[-1]:
+                    tmp=tmp+(len(dat_time)-1,)
+                exist=exist+(False,)
+        tmp = tmp+(block[2],)
+        exist_list.append(exist)
+        mk_idx.append(tmp)
     
-        mk_idx = np.array(tmp)
-    
-        if pos:
-           return mk_idx,exist
-        else:
-           return mk_idx
-     
+    if pos:
+        return mk_idx,exist_list
     else:
-        dat_time = list(dat_time)
-        mk_idx = []
-        exist_list = []
-        for block in mk_times:
-            tmp = ()
-            exist = ()
-            for time in block[0:2]:
-                try:
-                    tmp = tmp+(dat_time.index(time),)
-                    exist=exist+(True,)
-                except:
-                    if time<dat_time[0]:
-                        tmp=tmp+(0,)
-                    elif time>dat_time[-1]:
-                        tmp=tmp+(len(dat_time)-1,)
-                    exist=exist+(False,)
-            tmp = tmp+(block[2],)
-            exist_list.append(exist)
-            mk_idx.append(tmp)
-        
-        if pos:
-            return mk_idx,exist_list
-        else:
-            return mk_idx
-        
-def read_marker(fn,awd_dat):
-    '''This shouldn't be needed anymore... 
-    '''
- 
-    Mtimes = pd.read_csv(fn,header=None, keep_default_na=False)
-
-    # get the idx from the Mtimes file
-    mks = Mtimes.iloc[:,-2]
-    #mks = [ ii[-1] for ii in Mtimes ]
-    umks = np.unique(mks)
-    #print(umks)
-
-    #M_time = np.array([ ','.join(ii[0:1]) for ii in Mtimes ] )
-    mk_idx = {}
-    for mm in umks:
-        if mm != 'c' and mm != 'C':
-           tmp = Mtimes[0][Mtimes[1].isin([mm])]
-           tmp = get_idx(awd_dat['DateTime'],tmp)
-           mk_idx[mm] = tmp
-
-    # for fixed comments
-    comments = Mtimes[Mtimes[1].isin(['C'])]
-
-    return Mtimes, mk_idx, comments
+        return mk_idx
     
 def read_log(fn,awd_dat={}):
 
     dt_fmt = '%d-%b-%y %I:%M %p'
-    comment_mk = ['c','C']
 
     fn_pref,fn_ext = os.path.splitext(fn)
     if fn_ext == '.csv':
@@ -198,14 +151,13 @@ def read_log(fn,awd_dat={}):
              y = en_time[mm_log_idx]
              z = np.array(log_dat['Comment'])[mm_log_idx]
              mm_time = list(zip(x,y,z))
-             mm_idx, pos =  get_idx(awd_dat['DateTime'],mm_time,pos=True,oldvsn=False)
+             mm_idx, pos =  get_idx(awd_dat['DateTime'],mm_time,pos=True)
              for idx in range(0,len(mm_idx)):
                  if pos[idx]==(False,False):
                       mm_idx.pop(idx)
              mk_dict[mm] = [y for z in [x[0:2] for x in mm_idx] for y in z]
              comments[0] =np.append(comments[0],np.array([x[0] for x in mm_idx]))
              comments[1].extend([x[2] for x in mm_idx])
-             print(mm_idx)
         log_dat['mks'] = mk_dict 
         #log_dat['idx'] =  mk_idx
         log_dat['idx'] =  []
@@ -214,7 +166,7 @@ def read_log(fn,awd_dat={}):
     else:
         mk_list = list(zip(st_time,en_time,np.array(log_dat['Comment'])))
         #mk_idx, pos =  get_idx(awd_dat['DateTime'],mk_time,pos=True)
-        mk_idx,pos=get_idx(awd_dat['DateTime'],mk_list,pos=True,oldvsn=False)
+        mk_idx,pos=get_idx(awd_dat['DateTime'],mk_list,pos=True)
         #adjust for comment blocks that are totally out of range of AWD
         for idx in range(0,len(mk_idx)):
             if pos[idx]==(False,False):
@@ -355,8 +307,8 @@ def clip_dat(lim,awd_dat):
    dat = { ii: awd_dat[ii] for ii in ['DateTime','activity', 'dt_list','M'] }
    dat = pd.DataFrame.from_dict(dat)
 
-   [st,en] = get_idx(awd_dat['DateTime'],lim)
-
+   tmp = get_idx(awd_dat['DateTime'],lim)
+   [st,en]=[tmp[0][0],tmp[0][1]]
    clipped_dat =  dat.iloc[st:en,:]
    clipped_dat = clipped_dat.to_dict(orient='list')
 
